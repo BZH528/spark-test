@@ -1,0 +1,56 @@
+# 创建多分区topic
+bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic gmall_event_0523 --partitions 4 --replication-factor 1
+bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic gmall_start_0523 --partitions 4 --replication-factor 1
+
+# es创建索引模板
+PUT _template/gmall0523_dau_info_template
+{
+ "index_patterns": ["gmall0523_dau_info*"],
+ "settings": {
+ "number_of_shards": 3
+ },
+ "aliases" : {
+ "{index}-query": {},
+ "gmall0523_dau_info-query":{}
+ },
+ "mappings": {
+ "_doc":{
+ "properties":{
+ "mid":{
+ "type":"keyword"
+ },
+ "uid":{
+ "type":"keyword"
+ },
+ "ar":{
+ "type":"keyword"
+ },
+ "ch":{
+ "type":"keyword"
+ },
+ "vc":{
+ "type":"keyword"
+ },
+ "dt":{
+ "type":"keyword"
+ },
+ "hr":{
+ "type":"keyword"
+ },
+ "mi":{
+ "type":"keyword"
+ },
+ "ts":{
+ "type":"date"
+ }
+ }
+ }
+ }
+}
+
+#后台运行生成日志jar包,两台机器
+192.168.1.221:/home/bizh/rt_gmall上：
+nohup java -jar gmall-logger-0.0.1-SNAPSHOT.jar >gmall-logger-0.0.1.log 2>&1 &
+
+192.168.1.224：/home/bizh/rt_gmall上：
+nohup java -jar gmall-logger-0.0.1-SNAPSHOT.jar >gmall-logger-0.0.1.log 2>&1 &
