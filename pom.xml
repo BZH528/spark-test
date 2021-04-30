@@ -10,6 +10,7 @@
   <version>1.0.0</version>
   <modules>
     <module>spark-core-test</module>
+      <module>gmall0523realtime</module>
   </modules>
 
   <name>spark-test</name>
