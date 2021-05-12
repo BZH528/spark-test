@@ -202,20 +202,20 @@ object MyESUtil {
 
   /**
     * @Description: 向ES批量插入数据
-    * @Param: [dauInfoList, str]
+    * @Param: [infoList, str]
     * @return: void
     * @Author: bizh
     * @Date: 2021/4/28
     */
-  def bulkInsert(dauInfoList: List[(String,DauInfo)], indexName: String): Unit = {
+  def bulkInsert(infoList: List[(String,Any)], indexName: String): Unit = {
 
-    if (dauInfoList != null && dauInfoList.size != 0) {
+    if (infoList != null && infoList.size != 0) {
 
       val jestClient: JestClient = getJestClient()
 
       val builder: Bulk.Builder = new Bulk.Builder()
 
-      for ((id,dauInfo) <- dauInfoList) {
+      for ((id,dauInfo) <- infoList) {
 
         val index: Index = new Index.Builder(dauInfo)
           .index(indexName)
