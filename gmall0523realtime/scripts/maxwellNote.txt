@@ -1,0 +1,8 @@
+# 运行 BaseTrademarkApp，初始化品牌数据，
+bin/maxwell-bootstrap --user maxwell --password maxwell --host node01 --database gmall0523 --table base_trademark --client_id maxwell_1
+# 运行 BaseCategory3App，初始化分类数据
+bin/maxwell-bootstrap --user maxwell --password maxwell --host node01 --database gmall0523 --table base_category3 --client_id maxwell_1
+# 运行 SpuInfoApp，初始化 SPU 数据
+bin/maxwell-bootstrap --user maxwell --password maxwell --host node01 --database gmall0523 --table spu_info --client_id maxwell_1
+# 运行 SkuInfoApp，初始化商品数据
+bin/maxwell-bootstrap --user maxwell --password maxwell --host node01 --database gmall0523 --table sku_info --client_id maxwell_1
