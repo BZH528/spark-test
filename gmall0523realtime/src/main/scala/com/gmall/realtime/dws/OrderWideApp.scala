@@ -184,7 +184,7 @@ object OrderWideApp {
     }
 //    orderWideSplitDStream.print(1000)
     /** 注意：如果程序数据来源是kafka，那么在进行分叉处理（行动算子触发的），应该进行缓存*/
-    orderWideSplitDStream.cache()
+//    orderWideSplitDStream.cache()
     // 向ClickHouse中保存数据
     val spark: SparkSession = SparkSession.builder().appName("spark_sql_orderWide").getOrCreate()
 
@@ -192,6 +192,9 @@ object OrderWideApp {
     import spark.implicits._
     orderWideSplitDStream.foreachRDD{
       rdd => {
+
+        rdd.cache() // 在进行分叉处理（行动算子触发的），write是行动算子，再写入foreach又是行动算子，应该进行缓存
+
         val df: DataFrame = rdd.toDF
         df.write.mode(SaveMode.Append)
           .option("batchsize", "100")
