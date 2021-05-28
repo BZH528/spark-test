@@ -1,0 +1,4 @@
+# 创建名为tmp的命令空间
+create_namespace 'tmp'
+
+list_namespace
