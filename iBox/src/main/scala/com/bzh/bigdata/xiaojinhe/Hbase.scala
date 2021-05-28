@@ -6,13 +6,13 @@ import org.apache.commons.lang.math.NumberUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hbase.client._
-import org.apache.hadoop.hbase.client.coprocessor.{AggregationClient, LongColumnInterpreter}
+import org.apache.hadoop.hbase.client.coprocessor.{LongColumnInterpreter}
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
-import org.apache.hadoop.hbase.mapreduce.TableOutputFormat
 import org.apache.hadoop.hbase.util.Bytes
-import org.apache.hadoop.hbase.{HBaseConfiguration, HTableDescriptor, TableName}
+import org.apache.hadoop.hbase.{HBaseConfiguration, HTableDescriptor}
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.hbase.TableName
 
 
 /**
@@ -22,7 +22,7 @@ object Hbase {
 
 
 
-  def getRowCount(table:String):Long={
+  /*def getRowCount(table:String):Long={
     var count=0L
     var admin:Admin =null
     var aggregationClient:AggregationClient=null
@@ -45,7 +45,7 @@ object Hbase {
       case e:Exception =>e.printStackTrace()
     }
     return  count
-  }
+  }*/
 
 
  def getValue(tableName:String,key:String):String={
@@ -65,8 +65,10 @@ object Hbase {
   def putValue(tableName:String,key:String,value:String)={
     val table:Table = HbaseUtils.getTable(TableName.valueOf(tableName))
     val put = new Put(Bytes.toBytes(key))
-    put.add(Bytes.toBytes("non"),Bytes.toBytes("value"),Bytes.toBytes(value))
+//    put.add(Bytes.toBytes("non"),Bytes.toBytes("value"),Bytes.toBytes(value))
+    put.addColumn(Bytes.toBytes("non"), Bytes.toBytes("value"), Bytes.toBytes(value))
     table.put(put)
+    table.close()
   }
 
 
@@ -108,7 +110,7 @@ object Hbase {
   }
 
 
-  def getKerberosConfiguration(principal: String, keytabPath: String,table:String)= {
+  /*def getKerberosConfiguration(principal: String, keytabPath: String,table:String)= {
     val configuration = HBaseConfiguration.create
     configuration.addResource(new Path(ConfigFactory.confPath +"hbase-conf/core-site.xml"))
     configuration.addResource(new Path(ConfigFactory.confPath +"hbase-conf/hdfs-site.xml"))
@@ -125,12 +127,24 @@ object Hbase {
         job.getConfiguration
       }
     })
-  }
+  }*/
 
-  def main(args: Array[String]): Unit = {
-    val connection: Connection = getHBaseConn()
+  /*def main(args: Array[String]): Unit = {
+    /*val conf = HBaseConfiguration.create()
+    conf.set("hbase.zookeeper.quorum",ConfigFactory.hbasezookeeper)
+    val connection: Connection = ConnectionFactory.createConnection(conf)
 
-    println(connection)
-  }
+
+    val table: Table = connection.getTable(TableName.valueOf("tmp:cacheTable_2021-05-28"))
+    val put: Put = new Put(Bytes.toBytes("rk110"))
+
+    put.addColumn(Bytes.toBytes("non"), Bytes.toBytes("value"), Bytes.toBytes("123"))
+    table.put(put)
+    table.close()
+    println("插入数据成功")*/
+
+
+   putValue("tmp:cacheTable_" + Util.getDate(), "rk222", "1")
+  }*/
 
 }

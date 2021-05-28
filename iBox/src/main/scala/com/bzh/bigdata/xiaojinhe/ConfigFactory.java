@@ -15,7 +15,7 @@ public class ConfigFactory {
 
     public static String kafkaipport="192.168.1.221:9092";
     public static String kafkazookeeper="192.168.1.221:2181";
-    public static String[] kafkatopic="buryData,order".split(",");
+    public static String[] kafkatopic="buryData,ods_order_info".split(",");
     public static String kafkagroupid="one";
     public static String mysqlurl="jdbc:mysql://192.168.1.221:3306";
     public static String mysqlusername="root";

@@ -9,7 +9,6 @@ import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.Table;
-import org.apache.hadoop.hbase.client.coprocessor.AggregationClient;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -24,7 +23,7 @@ public class HbaseUtils {
     public static ExecutorService executor = null;
     public static Admin admin = null;
     public static Connection conn = null;
-    public static AggregationClient aggregationClient= null;
+//    public static AggregationClient aggregationClient= null;
     static {
         //1. 获取连接配置对象
         conf = HBaseConfiguration.create();
@@ -35,14 +34,14 @@ public class HbaseUtils {
             conn = Hbase.getHBaseConn();
             admin = conn.getAdmin();
             conf = conn.getConfiguration();
-            aggregationClient = new AggregationClient(conf);
+//            aggregationClient = new AggregationClient(conf);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public static AggregationClient getAggregationClient(){return aggregationClient;}
+//    public static AggregationClient getAggregationClient(){return aggregationClient;}
     public static Configuration getHbaseConf(){return conf;}
     public static Admin getHbaseAdmin(){return admin;}
 
