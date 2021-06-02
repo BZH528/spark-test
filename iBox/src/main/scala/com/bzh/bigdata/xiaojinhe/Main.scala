@@ -4,7 +4,9 @@ import java.lang
 
 import com.alibaba.fastjson.{JSON, JSONArray, JSONObject}
 import org.apache.hadoop.hbase.TableName
-import org.apache.hadoop.hbase.client.Admin
+import org.apache.hadoop.hbase.client.{Admin, Put}
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable
+import org.apache.hadoop.hbase.util.Bytes
 import org.apache.kafka.clients.consumer
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord}
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -17,6 +19,8 @@ import org.apache.spark.streaming.kafka010.{CanCommitOffsets, HasOffsetRanges, K
 import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.slf4j.{Logger, LoggerFactory}
+
+import scala.collection.mutable
 
 /**
   * Created with IntelliJ IDEA.
@@ -132,14 +136,18 @@ object Main {
           rdd
         }
       }
-      val filterDStream: DStream[ConsumerRecord[String, String]] = offsetDStream.filter(item => orderFilterFunction(item, topics(1)))
+      val filterOrderDStream: DStream[ConsumerRecord[String, String]] = offsetDStream.filter(item => orderFilterFunction(item, topics(1)))
 
 //      val filterWithValueDStream: DStream[String] = filterDStream.map(_.value())
 //      filterWithValueDStream.print(100)
 
+      val filterUidChannelDStream: DStream[ConsumerRecord[String, String]] = offsetDStream.filter(item=> visitFilterFunction(item,topics(0)))
+
+
+
 
       // 计算订单量和订单金额
-      val orderStatisticDStream: DStream[(String, (Long, Double))] = filterDStream.map {
+      val orderStatisticDStream: DStream[(String, (Long, Double))] = filterOrderDStream.map {
         x => {
           val json: JSONObject = JSON.parseObject(x.value())
           val data: JSONObject = json.getJSONArray("data").getJSONObject(0)
@@ -160,6 +168,69 @@ object Main {
           stream.asInstanceOf[CanCommitOffsets].commitAsync(offsetRanges)
         }
       }
+
+      // 获取埋点数据流
+      val uidChannelDStream: DStream[(String, String)] = filterUidChannelDStream.map {
+        x => {
+          val json: JSONObject = JSON.parseObject(x.value())
+          (json.getString("uid"), json.getString("channel"))
+        }
+      }
+
+
+      uidChannelDStream.foreachRDD{
+        rdd => {
+          rdd.cache()
+          // 计算访问次数
+          val batch_count: Long = rdd.count()
+          clickCountUpdateAndWriteToMysql(batch_count)
+
+          // 计算每个渠道新增访问人数，每天累计
+          rdd.reduceByKey((a,b) => a) //去重只保留一个采集周期内用户首次访问的渠道,只要旧的渠道
+            .mapPartitions{
+              par => {
+                val userMap = new scala.collection.mutable.HashMap[String,String]
+                par.foreach{
+                  x => {
+                    if (!userMap.contains(x._1)) {
+                      userMap += (x._1 -> x._2)
+                    }
+                  }
+                }
+                // 返回uid不在hbase表tmp:allUser中uid渠道的集合
+                Hbase.getNewUserList(userMap, ConfigFactory.all_user).toIterator
+              }
+            }.reduceByKey(_+_)
+            .collect()
+            .foreach(x=>newUserUpdateAndWriteToMysql(x))
+
+          //更新tmp:allUser表，tmp:allUser中uid对应的channel为最新的用户访问渠道值
+          rdd.filter(r => r._1 != "" && r._1 != null && r._1.length > 0 )
+            .map{
+              x => {
+                val family: Array[Byte] = Bytes.toBytes(ConfigFactory.family)
+                val column: Array[Byte] = Bytes.toBytes(ConfigFactory.column)
+                val put: Put = new Put(Bytes.toBytes(x._1))
+                put.addImmutable(family, column, Bytes.toBytes(x._2))
+                (new ImmutableBytesWritable, put)
+              }
+            }.saveAsNewAPIHadoopDataset(Hbase.getConfiguration(ConfigFactory.all_user))
+
+          // 根据tmp:allUser表计算访问用户数
+          val visit_user_count: Long = Hbase.getRowCount(ConfigFactory.all_user)
+          val now = Util.getFormatTime
+          Mysql.writeToMysql("visit", "visit_count", String.valueOf(visit_user_count), now)
+
+
+          // 等输出操作完成后提交offset
+          stream.asInstanceOf[CanCommitOffsets].commitAsync(offsetRanges)
+        }
+      }
+
+
+
+
+
       /*stream.foreachRDD{
         rdd => {
           val offsetRanges: Array[OffsetRange] = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
@@ -191,9 +262,9 @@ object Main {
 
 
   def orderFilterFunction(item: ConsumerRecord[String, String], topic: String): Boolean = {
-    logger.warn("msg:=============================\r\n" + item.value())
 
     if (item.topic().equals(topic)) {
+      logger.warn("orderFilterMsg:=============================\r\n" + item.value())
       val json: JSONObject = JSON.parseObject(item.value())
       val process_type: String = json.getString("type")
       val data: JSONObject = json.getJSONArray("data").getJSONObject(0)
@@ -242,6 +313,41 @@ object Main {
     val new_order_account = result_order_account + x._2._2
     Hbase.putValue("tmp:cacheTable_" + Util.getDate(), "order_account", new_order_account.toString)
     Mysql.writeToMysql(x._1, "order_account", String.valueOf(new_order_account), now)
+  }
+
+  def visitFilterFunction(item: ConsumerRecord[String, String], topic: String): Boolean = {
+    val tmp: Boolean = item.topic().equals(topic)
+    val json: JSONObject = JSON.parseObject(item.value())
+    if (json.containsKey("uid")&& json.containsKey("channel") && tmp) {
+      true
+    } else {
+      false
+    }
+  }
+
+  def clickCountUpdateAndWriteToMysql(batch_count: Long): Unit = {
+    val now: String = Util.getFormatTime
+    val old_count: String = Hbase.getValue("tmp:cacheTable_" + Util.getDate(), "click_count")
+    var result_count = 0L
+    if (!old_count.equals("")) {
+      result_count = old_count.toLong
+    }
+    val new_count = result_count + batch_count
+    Hbase.putValue("tmp:cacheTable_" + Util.getDate(),"click_count", new_count.toString)
+    Mysql.writeToMysql("visit", "click", String.valueOf(new_count), now)
+  }
+
+  def newUserUpdateAndWriteToMysql(x: (String, Long)): Unit = {
+    val now = Util.getFormatTime
+    val old_count = Hbase.getValue("tmp:cacheTable_" + Util.getDate(), x._1)
+    var result_count = 0L
+    if (!old_count.equals("")) {
+      result_count = old_count.toLong
+    }
+    val new_count = result_count + x._2
+    Hbase.putValue("tmp:cacheTable_" + Util.getDate(), x._1, new_count.toString)
+    Mysql.writeToMysql("newAddCustomer", x._1, String.valueOf(new_count), now)
+
   }
 
 
