@@ -73,7 +73,7 @@ object Util {
   }
 
   def main(args: Array[String]): Unit = {
-    val date: Long = resetTime
+    val date = getFormatTime
     println(date)
   }
 }
