@@ -101,30 +101,31 @@
             <version>2.1.0</version>
         </dependency>
 
+
         <!-- https://mvnrepository.com/artifact/org.apache.hbase/hbase -->
         <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase</artifactId>
-            <version>2.1.0</version>
+            <version>1.4.3</version>
+            <type>pom</type>
             <!--<scope>provided</scope>-->
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.apache.hbase/hbase-client -->
-        <dependency>
-            <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase-client</artifactId>
-            <version>2.1.0</version>
-        </dependency>
-
-
 
         <!-- https://mvnrepository.com/artifact/org.apache.hbase/hbase-server -->
-        <!--<dependency>
+        <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-server</artifactId>
-            <version>2.1.0</version>
-            &lt;!&ndash;<scope>provided</scope>&ndash;&gt;
-        </dependency>-->
+            <version>1.4.3</version>
+            <!--<scope>provided</scope>-->
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-protocol</artifactId>
+            <version>1.4.3</version>
+        </dependency>
+
 
         <!-- https://mvnrepository.com/artifact/com.alibaba/fastjson -->
         <dependency>
@@ -151,6 +152,13 @@
             <artifactId>guava</artifactId>
             <version>19.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-client</artifactId>
+            <version>1.4.3</version>
+        </dependency>
+
+
     </dependencies>
 
     <build>
