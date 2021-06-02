@@ -63,7 +63,7 @@ object BaseDBCanalApp {
         rdd.foreach{
           jsonObj => {
             val opType: String = jsonObj.getString("type")
-            if ("INSERT".equals(opType)) {
+            if ("INSERT".equals(opType) || "UPDATE".equals(opType)) {
               // 获取表名
               val table: String = jsonObj.getString("table")
               // 获取操作数据
@@ -71,12 +71,16 @@ object BaseDBCanalApp {
               // 拼接目标topic名称
               var sendTopic = "ods_" + table
 
+              //为适应小金盒ibox项目改动，将此处注释
               // 对dataArr数组遍历
-              import scala.collection.JavaConverters._
+              /*import scala.collection.JavaConverters._
               for (data <- dataArr.asScala) {
                 // 根据表名将数据发送到不同主题
                 MyKafkaSink.send(sendTopic, data.toString)
-              }
+              }*/
+
+              //为适应小金盒ibox项目改动，将此处注释
+              MyKafkaSink.send(sendTopic, jsonObj.toString())
 
             }
 
