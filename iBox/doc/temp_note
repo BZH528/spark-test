@@ -1,0 +1,16 @@
+# 计算每天每个渠道新增人数
+-- 清空hbase状态表
+truncate 'tmp:cacheTable_2021-06-02'
+truncate 'tmp:allUser'
+
+scan 'tmp:cacheTable_2021-06-02'
+scan 'tmp:allUser'
+
+--清空mysql结果表
+delete from realtime_feature where date = '2021-06-02';
+
+select * from realtime_feature where date = '2021-06-02' order by time,menu;
+
+
+-- 清空hdfs CheckPoint目录
+hadoop fs -rm -r /user/spark_works/checkdir/2021-06-02
