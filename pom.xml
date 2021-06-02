@@ -11,6 +11,9 @@
   <modules>
     <module>spark-core-test</module>
       <module>gmall0523realtime</module>
+      <module>iBox</module>
+      <module>locate-data-filter</module>
+      <module>DeCodeVehicleNo</module>
   </modules>
 
   <name>spark-test</name>
