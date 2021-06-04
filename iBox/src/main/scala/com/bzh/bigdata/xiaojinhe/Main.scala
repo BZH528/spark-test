@@ -216,7 +216,7 @@ object Main {
               }
             }.saveAsNewAPIHadoopDataset(Hbase.getConfiguration(ConfigFactory.all_user))
 
-          // 根据tmp:allUser表计算访问用户数
+          // 根据tmp:allUser表计算当天的访问用户数，setTimeRange(dayStartTime,dayEndTime)
           val visit_user_count: Long = Hbase.getRowCount(ConfigFactory.all_user)
           val now = Util.getFormatTime
           Mysql.writeToMysql("visit", "visit_count", String.valueOf(visit_user_count), now)
