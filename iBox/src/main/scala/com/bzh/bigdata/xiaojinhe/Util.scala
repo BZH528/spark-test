@@ -75,5 +75,9 @@ object Util {
   def main(args: Array[String]): Unit = {
     val date = getFormatTime
     println(date)
+
+    val dayStartTime: String = getDayStartTime()
+    val dayEndTime: String = getDayEndTime()
+    print("start: " + dayStartTime + "\tend: " + dayEndTime)
   }
 }
