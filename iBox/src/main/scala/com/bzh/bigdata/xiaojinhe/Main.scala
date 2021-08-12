@@ -146,7 +146,7 @@ object Main {
 
 
 
-      // 计算订单量和订单金额
+      // 1、计算订单量和订单金额
       val orderStatisticDStream: DStream[(String, (Long, Double))] = filterOrderDStream.map {
         x => {
           val json: JSONObject = JSON.parseObject(x.value())
@@ -181,11 +181,11 @@ object Main {
       uidChannelDStream.foreachRDD{
         rdd => {
           rdd.cache()
-          // 计算访问次数
+          // 2.1、计算访问次数
           val batch_count: Long = rdd.count()
           clickCountUpdateAndWriteToMysql(batch_count)
 
-          // 计算每个渠道新增访问人数，每天累计
+          // 3、计算每个渠道新增访问人数，每天累计
           rdd.reduceByKey((a,b) => a) //去重只保留一个采集周期内用户首次访问的渠道,只要旧的渠道
             .mapPartitions{
               par => {
@@ -216,7 +216,7 @@ object Main {
               }
             }.saveAsNewAPIHadoopDataset(Hbase.getConfiguration(ConfigFactory.all_user))
 
-          // 根据tmp:allUser表计算当天的访问用户数，setTimeRange(dayStartTime,dayEndTime)
+          // 2.2 根据tmp:allUser表计算当天的访问用户数，setTimeRange(dayStartTime,dayEndTime)
           val visit_user_count: Long = Hbase.getRowCount(ConfigFactory.all_user)
           val now = Util.getFormatTime
           Mysql.writeToMysql("visit", "visit_count", String.valueOf(visit_user_count), now)
